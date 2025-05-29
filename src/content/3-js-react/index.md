@@ -6,9 +6,9 @@ description: "TypeScript로 React의 핵심 기능인 가상 DOM, JSX, 컴포넌
 categories: Dev React 
 ---
 
-# ⚛️ 바닐라 JS로 React 컴포넌트 만들기
+# 🚀 바닐라 JS로 React 컴포넌트 만들기
 
-안녕하세요! 지난 시간에 React Router의 핵심 기능을 직접 구현해보면서 SPA 라우팅의 원리를 깊이 이해해보았는데요. 오늘은 한 걸음 더 나아가 React의 핵심인 컴포넌트 시스템을 바닐라 JavaScript(TypeScript)로 직접 구현해보겠습니다. 🚀
+안녕하세요! 지난 시간에 React Router의 핵심 기능을 직접 구현해보면서 SPA 라우팅의 원리를 깊이 이해해보았는데요. 오늘은 한 걸음 더 나아가 React의 핵심인 컴포넌트 시스템을 바닐라 JavaScript(TypeScript)로 직접 구현해보겠습니다.
 
 지난번 라우터를 만들면서 "React는 어떻게 컴포넌트를 렌더링하고 상태를 관리할까?"라는 궁금증이 생기지 않으셨나요? 오늘 우리는 React의 마법 같은 기능들의 베일을 벗겨보며 그 답을 찾아보겠습니다!
 

@@ -156,7 +156,7 @@ export const query = graphql`
 - 📱 **반응형 디자인**: 모바일부터 데스크톱까지 모든 기기에서 최적화된 경험을 제공합니다
 - 🌓 **다크 모드 지원**: 눈의 피로를 줄이고 배터리를 절약할 수 있습니다
 - 💅 **코드 하이라이팅 지원**: 코드 블록을 멋지게 보여줍니다
-- 📑 **목차(TOC) 자동 생성**: 긴 글도 쉽게 탐색할 수 있습니다
+- 📑 **스마트한 목차(TOC) 자동 생성**: 긴 글도 쉽게 탐색할 수 있습니다
 - 💬 **댓글 기능**: Utterances를 통해 GitHub 이슈 기반 댓글 시스템을 구현했습니다
 - 🤖 **SEO 최적화**: 검색 엔진에 잘 노출되도록 메타데이터를 관리합니다
 - 📚 **Posts**: 글을 카테고리별로 보여주는 Posts 페이지
@@ -294,35 +294,34 @@ public class BlogController {
 &nbsp;
 
 ### 📑 자동 목차 생성 (ToC)
-긴 글도 쉽게 탐색할 수 있도록 목차를 자동으로 생성합니다.
-
-```markdown
-# 제목 1
-## 제목 2
-### 제목 3
-
-<!-- 마크다운 파일 맨 아래에 추가 -->
-```toc
-```
-```
-
-&nbsp;
-
-### 4. 🎯 선택적 홈 화면 노출
-카테고리에 `featured-` 접두사를 붙여 메인 화면에 원하는 글만 노출시킬 수 있습니다.
+긴 글도 쉽게 탐색할 수 있도록 목차를 자동으로 생성하고, **현재 읽고 있는 섹션을 하이라이트**해주는 기능을 구현했으며 
+구현된 목차는 **현재 읽고 있는 섹션을 실시간으로 하이라이트**해주며, 
+🖱️ **클릭하면 해당 섹션으로 부드럽게 스크롤**됩니다. 또한 📱 **반응형 디자인으로 모바일에서는 숨김 처리**되어 화면을 효율적으로 활용하고,
+ 🎨 **h2, h3, h4 계층 구조에 따른 들여쓰기**로 가독성을 높였습니다!
 
 ```typescript
-// gatsby-data.ts
-featured: [
-  {
-    title: '기술 글',
-    category: 'featured-기술',
+// 스크롤 이벤트로 현재 위치 감지
+const observer = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        setActiveId(entry.target.id);
+      }
+    });
   },
-  {
-    title: '회고',
-    category: 'featured-회고',
-  },
-],
+  { rootMargin: '-20% 0% -70% 0%' }
+);
+
+// 목차 렌더링
+{headings.map(({ id, text, level }) => (
+  <TOCItem
+    level={level}
+    active={activeId === id}
+    onClick={() => scrollToElement(id)}
+  >
+    {text}
+  </TOCItem>
+))}
 ```
 
 &nbsp;
@@ -346,6 +345,108 @@ const Utterances: React.FC<UtterancesProps> = ({ repo, path }) => {
   }, [theme.isDark]);
 };
 ```
+
+&nbsp;
+
+### 🛠️ Portfolio 기술 스택 시각화
+프로젝트에서 사용한 기술들을 한눈에 파악할 수 있도록 **아이콘과 색상**으로 표시하는 기능을 구현했습니다!
+
+```typescript
+// src/components/PortfolioCard/index.tsx
+const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
+  const iconStyle = { fontSize: '15px', marginRight: '3px' };
+  
+  const getTechIcon = (tech: string) => {
+    switch (tech) {
+      case 'Javascript':
+        return <BiLogoJavascript style={iconStyle} />;
+      case 'Typescript':
+        return <BiLogoTypescript style={iconStyle} />;
+      case 'React':
+        return <FaReact style={iconStyle} />;
+      case 'Vue':
+        return <FaVuejs style={iconStyle} />;
+      case 'Spring Boot':
+        return <SiSpringboot style={iconStyle} />;
+      case 'MySQL':
+        return <SiMysql style={iconStyle} />;
+      // ... 더 많은 기술 스택
+    }
+  };
+
+  return (
+    <S.TechList>
+      {project.techStack.map((tech, index) => (
+        <S.Tech tech={tech} key={index}>
+          {getTechIcon(tech)}
+          {tech}
+        </S.Tech>
+      ))}
+    </S.TechList>
+  );
+};
+```
+
+각 기술 스택별 고유한 색상 적용:
+
+```typescript
+// src/components/PortfolioCard/styled.ts
+export const Tech = styled.div<{ tech: string }>`
+  display: flex;
+  align-items: center;
+  font-size: 10px;
+  padding: 3.5px 5px;
+  border-radius: 5px;
+  color: ${({ theme }) => theme.color.white100};
+  background-color: ${({ theme, tech }) => {
+    switch (tech) {
+      case 'Javascript':
+        return '#f0db4f';  // JavaScript 공식 노란색
+      case 'Typescript':
+        return '#2f74c0';  // TypeScript 파란색
+      case 'React':
+        return '#53d4f7';  // React 하늘색
+      case 'Vue':
+        return '#42b883';  // Vue 초록색
+      case 'Spring Boot':
+        return '#6DB33F';  // Spring 연두색
+      case 'MySQL':
+        return '#4479A1';  // MySQL 파란색
+      // ... 각 기술별 고유 색상
+    }
+  }};
+`;
+```
+
+프로젝트 데이터 구조:
+```typescript
+// gatsby-data.ts
+export const projects: Project[] = [
+  {
+    title: '개발자 블로그',
+    description: 'Gatsby로 만든 기술 블로그',
+    techStack: ['Typescript', 'React', 'Gatsby'],
+    thumbnailUrl: '/images/blog-thumbnail.png',
+    links: {
+      github: 'https://github.com/username/blog',
+      demo: 'https://myblog.com'
+    }
+  },
+  {
+    title: 'Todo 애플리케이션',
+    description: 'Spring Boot와 React로 만든 Todo 앱',
+    techStack: ['Javascript', 'React', 'Spring Boot', 'MySQL'],
+    // ...
+  }
+];
+```
+
+이렇게 구현하면:
+- 🎨 **각 기술마다 고유한 색상과 아이콘**
+- 👀 **한눈에 프로젝트 기술 스택 파악 가능**
+- 🔧 **새로운 기술 추가가 쉬움**
+- 💅 **깔끔하고 직관적인 UI**
+
 &nbsp;
 
 ### 🤖 SEO 최적화
