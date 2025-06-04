@@ -56,7 +56,7 @@ export default {
         title: 'Cat Run',
         description: '고양이 달리기 게임',
         techStack: ['Typescript', 'Spring Boot', 'MySQL'],
-        thumbnailUrl: 'cat-run.png',
+        thumbnailUrl: 'cat-run-logo.png',
         links: {
           github: 'https://github.com/gkstmdgjs/cat-run-front',
           demo: 'https://cat-run.seunghoney.com/',

@@ -2,7 +2,7 @@
 emoji: 🖥️
 title: '개발자의 낭만, 나만의 서버 만들기'
 date: '2025-03-28'
-categories: featured-Make
+categories: featured-Make Dev
 ---
 
 지난 글에서 미니 PC 조립을 성공적으로 마쳤다면, 이제 진짜 서버의 모습을 갖춰야 할 차례입니다.
