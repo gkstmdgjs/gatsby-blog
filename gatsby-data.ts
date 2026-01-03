@@ -1,7 +1,7 @@
 export default {
   title: `seunghoney`,
-  siteUrl: `https://honey.com/`,
-  siteImage: `/profile.png`,
+  siteUrl: `https://blog.seunghoney.com/`,
+  siteImage: `/profile.jpg`,
   language: `ko`,
   comments: {
     utterances: {
@@ -11,7 +11,7 @@ export default {
   author: {
     name: `한승헌`,
     nickname: `Honey`,
-    profileImage: `profile.png`,
+    profileImage: `profile.jpg`,
     job: `Full Stack Developer`,
     email: `sh725473@gmail.com`,
     github: `https://github.com/gkstmdgjs`,
