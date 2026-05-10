@@ -37,12 +37,13 @@ const PostsTemplate: React.FC<PostsTemplateProps> = ({ location, pageContext }) 
   useEffect(() => {
     if (!ref.current) return;
     const currentTab = ref.current.children[currentTabIndex] as HTMLDivElement;
-    ref.current.scrollTo({ left: currentTab.offsetLeft - (ref.current.offsetWidth - currentTab.offsetWidth) / 2 });
+    ref.current.scrollTo({
+      left: currentTab.offsetLeft - (ref.current.offsetWidth - currentTab.offsetWidth) / 2,
+    });
   }, []);
 
   return (
     <Layout location={location}>
-      <Seo title='Honey | Posts' />
       <S.CategoryWrapper>
         <S.CategoryTitle>{categories[currentTabIndex]}</S.CategoryTitle>
         <S.CategorySubtitle>{`${posts.length} post${posts.length < 2 ? '' : 's'}`}</S.CategorySubtitle>
@@ -70,3 +71,5 @@ const PostsTemplate: React.FC<PostsTemplateProps> = ({ location, pageContext }) 
 };
 
 export default PostsTemplate;
+
+export const Head = () => <Seo title='Honey | Posts' />;

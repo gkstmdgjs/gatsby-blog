@@ -7,7 +7,6 @@ export default class PostClass {
   html;
   slug;
   title;
-  author;
   date;
   categories;
   filteredCategories;
@@ -15,7 +14,7 @@ export default class PostClass {
   constructor(node: MarkdownRemark) {
     const { id, html, excerpt, frontmatter, fields } = node;
     const { slug } = fields;
-    const { emoji, categories, title, author, date } = frontmatter;
+    const { emoji, categories, title, date } = frontmatter;
 
     const categoryArr = categories.split(' ');
 
@@ -25,7 +24,6 @@ export default class PostClass {
     this.html = html;
     this.slug = slug;
     this.title = title;
-    this.author = author;
     this.date = date;
     this.categories = categoryArr;
     this.filteredCategories = categoryArr.map((category) => {

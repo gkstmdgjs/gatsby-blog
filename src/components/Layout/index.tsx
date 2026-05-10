@@ -1,5 +1,3 @@
-import '@/src/styles/style.scss';
-
 import { ThemeProvider } from '@emotion/react';
 import { ThemeManagerContext } from 'gatsby-emotion-dark-mode';
 import { useContext } from 'react';

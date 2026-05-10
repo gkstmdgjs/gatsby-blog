@@ -4,7 +4,10 @@ import path from 'path';
 
 import { AllMarkdownRemark } from './src/type';
 
-export const onCreateWebpackConfig: GatsbyNode['onCreateWebpackConfig'] = ({ getConfig, actions }) => {
+export const onCreateWebpackConfig: GatsbyNode['onCreateWebpackConfig'] = ({
+  getConfig,
+  actions,
+}) => {
   const output = getConfig().output || {};
 
   actions.setWebpackConfig({
@@ -29,10 +32,13 @@ const createPosts = ({ createPage, edges }: CreatePagesFuncProps) => {
   const edgesWithMap = edges.map((edge) => {
     const { categories } = edge.node.frontmatter;
     const categoriesArr = categories.split(' ');
-    const categoriesMap = categoriesArr.reduce((acc, category) => {
-      acc[category] = true;
-      return acc;
-    }, {} as Record<string, boolean>);
+    const categoriesMap = categoriesArr.reduce(
+      (acc, category) => {
+        acc[category] = true;
+        return acc;
+      },
+      {} as Record<string, boolean>,
+    );
 
     return { ...edge, categoriesMap };
   });
@@ -93,7 +99,7 @@ export const createPages: GatsbyNode['createPages'] = async ({ graphql, actions,
     };
   } = await graphql(`
     {
-      allMarkdownRemark(sort: { order: DESC, fields: [frontmatter___date] }, limit: 1000) {
+      allMarkdownRemark(sort: { frontmatter: { date: DESC } }, limit: 1000) {
         edges {
           node {
             id

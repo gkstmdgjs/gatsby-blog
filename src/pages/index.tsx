@@ -1,4 +1,4 @@
-import { graphql } from 'gatsby';
+import { graphql, HeadProps } from 'gatsby';
 import React from 'react';
 
 import EmojiPostColumn from '../components/EmojiPostColumn';
@@ -8,32 +8,29 @@ import Seo from '../components/Seo';
 import PostClass from '../models/post';
 import { AllMarkdownRemark, SiteMetadata } from '../type';
 
+type HomeData = {
+  site: { siteMetadata: SiteMetadata };
+  allMarkdownRemark: AllMarkdownRemark;
+};
+
 type HomeProps = {
-  data: {
-    site: { siteMetadata: SiteMetadata };
-    allMarkdownRemark: AllMarkdownRemark;
-  };
+  data: HomeData;
   location: Location;
 };
 
 const Home: React.FC<HomeProps> = ({ location, data }) => {
-  const posts = data.allMarkdownRemark.edges.map(
-    ({ node }) => new PostClass(node),
-  );
+  const posts = data.allMarkdownRemark.edges.map(({ node }) => new PostClass(node));
   const { author, featured } = data.site.siteMetadata;
 
   const recentPosts = posts.slice(0, 3);
 
   const featuredPosts = featured.map(({ title, category }) => {
-    const filteredPosts = posts.filter((post) =>
-      post.categories.find((c) => c === category),
-    );
+    const filteredPosts = posts.filter((post) => post.categories.find((c) => c === category));
     return { title, posts: filteredPosts };
   });
 
   return (
     <Layout location={location}>
-      <Seo title={author.nickname} />
       <Profile author={author} />
       <EmojiPostColumn title='Recent Posts' posts={recentPosts} fill={false} />
       {featuredPosts.map(({ title, posts }, i) => (
@@ -45,9 +42,13 @@ const Home: React.FC<HomeProps> = ({ location, data }) => {
 
 export default Home;
 
+export const Head = ({ data }: HeadProps<HomeData>) => (
+  <Seo title={data.site.siteMetadata.author.nickname} />
+);
+
 export const pageQuery = graphql`
   query {
-    allMarkdownRemark(sort: { fields: frontmatter___date, order: DESC }) {
+    allMarkdownRemark(sort: { frontmatter: { date: DESC } }) {
       edges {
         node {
           id

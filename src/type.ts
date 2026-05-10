@@ -95,6 +95,39 @@ declare module '@emotion/react' {
       gray20: string;
       gray10: string;
       white100: string;
+
+      codeBg: string;
+      codeBorder: string;
+      codeInlineBg: string;
+      codeInlineText: string;
+
+      tableBorder: string;
+      tableEvenRowBg: string;
+      tableHoverBg: string;
+
+      blockquoteBorder: string;
+      blockquoteText: string;
+
+      hrColor: string;
+      anchorColor: string;
+
+      kbdBg: string;
+      kbdBorder: string;
+      kbdText: string;
+
+      syntaxComment: string;
+      syntaxKeyword: string;
+      syntaxString: string;
+      syntaxNumber: string;
+      syntaxFunction: string;
+      syntaxVariable: string;
+      syntaxConstant: string;
+      syntaxTag: string;
+      syntaxAttrName: string;
+      syntaxPunctuation: string;
+      syntaxOperator: string;
+      syntaxSelection: string;
+      syntaxHighlightLineBg: string;
     };
   }
 }

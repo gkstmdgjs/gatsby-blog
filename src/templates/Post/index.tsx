@@ -1,4 +1,4 @@
-import { graphql } from 'gatsby';
+import { graphql, HeadProps } from 'gatsby';
 import { ThemeManagerContext } from 'gatsby-emotion-dark-mode';
 import React, { useContext, useEffect } from 'react';
 
@@ -12,16 +12,18 @@ import { Post, SiteMetadata } from '@/src/type';
 
 import * as S from './styled';
 
+type PostTemplateData = {
+  categories: string[];
+  prev: Post;
+  next: Post;
+  cur: Post;
+  site: { siteMetadata: SiteMetadata };
+  markdownRemark: Post;
+};
+
 type PostTemplateProps = {
   location: Location;
-  data: {
-    categories: string[];
-    prev: Post;
-    next: Post;
-    cur: Post;
-    site: { siteMetadata: SiteMetadata };
-    markdownRemark: Post;
-  };
+  data: PostTemplateData;
 };
 
 const PostTemplate: React.FC<PostTemplateProps> = ({ location, data }) => {
@@ -38,6 +40,38 @@ const PostTemplate: React.FC<PostTemplateProps> = ({ location, data }) => {
     const headers = postSection.querySelectorAll('h1, h2, h3, h4, h5, h6');
     if (!headers) return;
 
+    const tocContainerRef = document.querySelector<HTMLElement>('.table-of-contents');
+    let thumb: HTMLElement | null = null;
+    if (tocContainerRef) {
+      thumb = tocContainerRef.querySelector<HTMLElement>(':scope > .toc-thumb');
+      if (!thumb) {
+        thumb = document.createElement('div');
+        thumb.className = 'toc-thumb';
+        tocContainerRef.appendChild(thumb);
+      }
+    }
+
+    const updateThumb = () => {
+      if (!tocContainerRef || !thumb) return;
+      const { scrollHeight, clientHeight, scrollTop } = tocContainerRef;
+      if (scrollHeight <= clientHeight + 1) {
+        thumb.style.display = 'none';
+        return;
+      }
+      thumb.style.display = 'block';
+      const max = scrollHeight - clientHeight;
+      const thumbHeight = Math.max(20, (clientHeight / scrollHeight) * clientHeight);
+      const thumbTop = (scrollTop / max) * (clientHeight - thumbHeight);
+      thumb.style.height = `${thumbHeight}px`;
+      thumb.style.top = `${scrollTop + thumbTop}px`;
+    };
+    updateThumb();
+
+    tocContainerRef?.addEventListener('scroll', updateThumb);
+    window.addEventListener('resize', updateThumb);
+
+    let prevHeaderText: string | null | undefined;
+
     const scrollEvent = () => {
       const overTheTop: Element[] = [];
       headers.forEach((h) => {
@@ -47,7 +81,11 @@ const PostTemplate: React.FC<PostTemplateProps> = ({ location, data }) => {
       });
 
       const curHeaderText = overTheTop.pop()?.textContent;
-      const aTags = document.querySelector('.table-of-contents')?.querySelectorAll('a');
+      if (curHeaderText === prevHeaderText) return;
+      prevHeaderText = curHeaderText;
+
+      const tocContainer = document.querySelector<HTMLElement>('.table-of-contents');
+      const aTags = tocContainer?.querySelectorAll('a');
 
       aTags?.forEach((a) => {
         a.className = '';
@@ -55,16 +93,40 @@ const PostTemplate: React.FC<PostTemplateProps> = ({ location, data }) => {
           a.className = theme.isDark ? 'activated-dark' : 'activated-light';
         }
       });
+
+      const activeLink = tocContainer?.querySelector<HTMLElement>(
+        '.activated-dark, .activated-light',
+      );
+      if (!tocContainer || !activeLink) return;
+
+      const containerRect = tocContainer.getBoundingClientRect();
+      const linkRect = activeLink.getBoundingClientRect();
+      const padding = 20;
+
+      if (linkRect.top < containerRect.top) {
+        tocContainer.scrollTo({
+          top: tocContainer.scrollTop + (linkRect.top - containerRect.top) - padding,
+          behavior: 'smooth',
+        });
+      } else if (linkRect.bottom > containerRect.bottom) {
+        tocContainer.scrollTo({
+          top: tocContainer.scrollTop + (linkRect.bottom - containerRect.bottom) + padding,
+          behavior: 'smooth',
+        });
+      }
     };
     scrollEvent();
 
     document.addEventListener('scroll', scrollEvent);
-    return () => { document.removeEventListener('scroll', scrollEvent); };
+    return () => {
+      document.removeEventListener('scroll', scrollEvent);
+      tocContainerRef?.removeEventListener('scroll', updateThumb);
+      window.removeEventListener('resize', updateThumb);
+    };
   }, [theme.isDark]);
 
   return (
     <Layout location={location}>
-      <Seo title={`Honey | ${curPost?.title}`} description={curPost?.excerpt} />
       <PostHeader post={curPost} />
       <S.PostContent>
         <div className='markdown' dangerouslySetInnerHTML={{ __html: curPost.html }} />
@@ -76,6 +138,11 @@ const PostTemplate: React.FC<PostTemplateProps> = ({ location, data }) => {
 };
 
 export default PostTemplate;
+
+export const Head = ({ data }: HeadProps<PostTemplateData>) => {
+  const curPost = new PostClass(data.cur);
+  return <Seo title={`Honey | ${curPost?.title}`} description={curPost?.excerpt} />;
+};
 
 export const pageQuery = graphql`
   query ($slug: String, $nextSlug: String, $prevSlug: String) {

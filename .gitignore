@@ -67,3 +67,14 @@ yarn-error.log
 .pnp.js
 # Yarn Integrity file
 .yarn-integrity
+
+# Claude / MCP
+.claude/
+.mcp.json
+CLAUDE.md
+
+# Cursor
+.cursor/
+
+# TypeScript incremental build
+tsconfig.tsbuildinfo

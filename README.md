@@ -41,9 +41,6 @@ gatsby-blog/
 │   │   ├── ThemeToggle/     # 다크모드 토글
 │   │   └── ...
 │   ├── 📁 content/          # 📝 블로그 포스트 마크다운
-│   │   ├── 1-gatsby-blog/
-│   │   ├── 2-js-react/
-│   │   └── 3-js-react/
 │   ├── 📁 images/           # 🖼️ 이미지 에셋
 │   ├── 📁 models/           # 🗂️ 데이터 모델
 │   ├── 📁 pages/            # 📄 페이지 컴포넌트
@@ -79,7 +76,7 @@ gatsby-blog/
 # 의존성 설치
 yarn
 
-# 개발 서버 실행 (포트: 7474)
+# 개발 서버 실행 (.env 의 PORT 자동 로드 — 미설정 시 Gatsby 기본 8000)
 yarn start
 
 # 프로덕션 빌드
@@ -91,6 +88,14 @@ yarn serve
 # 캐시 정리
 yarn clean
 ```
+
+### 환경 변수 (.env)
+
+| 변수 | 설명 | 예시 |
+|------|------|------|
+| `PORT` | 개발 서버 포트 (`yarn start`) | `7000` |
+
+`yarn start` / `yarn build` / `yarn serve` 는 `dotenv-cli` 로 `.env` 를 자동 로드한 뒤 Gatsby 명령을 실행합니다. 미설정 시 Gatsby 기본 포트(8000) 사용.
 
 ## 👨‍💻 개발자 정보
 

@@ -40,6 +40,13 @@ export default {
     },
     {
       category: 'Career',
+      date: '2025.12.19 - 2026.05.01',
+      en: 'Basket',
+      kr: '베스킷 (외주)',
+      info: 'Full Stack Developer',
+    },
+    {
+      category: 'Career',
       date: '2023.05.15 - 2024.02.12',
       en: 'Casting',
       kr: '캐스팅 (외주)',
@@ -55,7 +62,7 @@ export default {
       {
         title: 'Cat Run',
         description: '고양이 달리기 게임',
-        techStack: ['Typescript', 'Spring Boot', 'MySQL'],
+        techStack: ['Typescript', 'NestJS', 'MySQL'],
         thumbnailUrl: 'cat-run-logo.png',
         links: {
           github: 'https://github.com/gkstmdgjs/cat-run-front',
@@ -63,7 +70,7 @@ export default {
           googlePlay: '',
           appStore: '',
         },
-      }
+      },
     ],
   },
 };

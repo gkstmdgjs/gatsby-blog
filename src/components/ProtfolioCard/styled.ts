@@ -108,6 +108,8 @@ export const Tech = styled.div<{ tech: string }>`
         return '#339933';
       case 'Spring Boot':
         return '#6DB33F';
+      case 'NestJS':
+        return '#E0234E';
       case 'Laravel':
         return '#FF2D20';
       case 'MySQL':

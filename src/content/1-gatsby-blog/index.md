@@ -2,7 +2,7 @@
 emoji: 🛠️
 title: '내 손으로 만든 Gatsby 블로그'
 date: '2025-01-13'
-categories: featured-Make
+categories: featured-Make Frontend
 ---
 
 <h1 align="center">
@@ -15,7 +15,7 @@ categories: featured-Make
 
 그리고 개발자라면 본인이 직접 만든 블로그 하나 쯤은 있어야 멋이 좀 난다고 생각 했습니다.
 
-그러던 중 <a href="https://www.jeong-min.com">Danmin</a>님께서 만드신 오픈 소스 블로그 템플릿을 발견하였고 이 템플릿을 베이스로 커스터마이징하여 내 블로그를 만들어 보기로 결심 했습니다.
+그러던 중 [Danmin](https://www.jeong-min.com)님께서 만드신 오픈 소스 블로그 템플릿을 발견하였고 이 템플릿을 베이스로 커스터마이징하여 내 블로그를 만들어 보기로 결심 했습니다.
 
 &nbsp;
 

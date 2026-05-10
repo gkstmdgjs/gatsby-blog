@@ -14,9 +14,11 @@ export const Title = styled.div<{ fill: 'true' | 'false' }>`
   width: fit-content;
   margin-bottom: 25px;
   padding: 10px;
-  background-color: ${({ theme, fill }) => (fill === 'true' ? theme.color.black40 : theme.color.white100)};
+  background-color: ${({ theme, fill }) =>
+    fill === 'true' ? theme.color.black40 : theme.color.white100};
   color: ${({ theme, fill }) => (fill === 'true' ? theme.color.white100 : theme.color.black40)};
-  border: 1px solid ${({ theme, fill }) => (fill === 'true' ? theme.color.white100 : theme.color.black40)};
+  border: 1px solid
+    ${({ theme, fill }) => (fill === 'true' ? theme.color.white100 : theme.color.black40)};
 
   @media ${MOBILE_MEDIA_QUERY} {
     font-size: 17px;

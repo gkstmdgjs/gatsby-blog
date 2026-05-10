@@ -2,7 +2,7 @@
 emoji: 🐱
 title: 'Cat Run 게임 개발기'
 date: '2025-05-13'
-categories: featured-Make Dev
+categories: featured-Make Dev Frontend Backend
 ---
 
 게임을 좋아하는 저는 개발자가 되었을 때부터 **꼭 한번 게임을 개발** 해보고 싶다는 뜨거운 생각을 가지고 있었습니다.
@@ -34,16 +34,16 @@ categories: featured-Make Dev
 - **TypeScript** - 타입 안전성 확보
 - **HTML5 Canvas API** - 게임 그래픽 구현
 - **SCSS** - 스타일링
-- **SockJS & StompJS** - 웹소켓 통신
+- **Socket.IO Client** - 웹소켓 실시간 통신
 - **Vite** - 빌드 및 개발 환경
 
 ### 백엔드
-- **Java 21**
-- **Spring Boot 3.4.4**
-- **Spring Data JPA** - 데이터 접근 추상화
-- **QueryDSL** - 타입 안전한 쿼리 구성
-- **WebSocket** - 실시간 게임 상호작용
-- **Redis** - 랭킹 데이터 캐싱
+- **Node.js + TypeScript**
+- **NestJS 11** - 모듈 기반 서버 프레임워크
+- **Prisma ORM** - 타입 안전한 DB 접근
+- **Socket.IO (NestJS Gateway)** - 실시간 양방향 통신
+- **class-validator** - 선언적 DTO 검증
+- **ioredis** - Redis 클라이언트 (랭킹 캐싱 / mTLS 지원)
 - **MySQL** - 주요 데이터 저장소
 
 ## ✨ 주요 기능
@@ -229,52 +229,46 @@ function colorTransition(start: string, end: string, progress: number): string {
 
 정말 많은 고민과 시행착오를 거쳐 완성한 실시간 랭킹 시스템입니다! 💫
 
-**STOMP + SockJS로 안정적인 연결**
+**Socket.IO 로 안정적인 연결**
 
 ```typescript
+import { io, Socket } from 'socket.io-client';
+
 export class WebSocketClient {
-  private client: Client;
+  private socket: Socket;
 
   constructor() {
-    this.client = new Client({
-      webSocketFactory: () => new SockJS(`${import.meta.env.VITE_API_URL}/ws`),
-      reconnectDelay: 5000,        // 연결 끊어졌을 때 5초 후 재연결
-      heartbeatIncoming: 5000,     // 서버에서 클라이언트로 하트비트
-      heartbeatOutgoing: 3000,     // 클라이언트에서 서버로 하트비트
+    this.socket = io(import.meta.env.VITE_API_URL, {
+      reconnection: true,            // 끊어지면 자동 재연결
+      reconnectionDelay: 5000,       // 5초 간격으로 재시도
+      reconnectionAttempts: Infinity,
+      withCredentials: true,         // 서버 CORS credentials 와 짝 맞춤
     });
   }
 
   connect(callback: (data: T.WSCatData) => void) {
-    this.client.onConnect = () => {
-      // 연결 성공 시 초기 메시지 전송
-      this.sendMessage({ message: 'WebSocket Start' });
+    // 연결 직후 초기 데이터 요청 (빈 페이로드 → 서버가 IP 로 분기)
+    this.socket.on('connect', () => {
+      this.sendMessage({});
+    });
 
-      // 전체 브로드캐스트 메시지 구독 (모든 사용자가 받음)
-      this.client.subscribe('/topic/cat', (message: Message) => {
-        const data = JSON.parse(message.body);
-        callback(data);
-      });
-
-      // 개인 전용 메시지 구독 (세션별로 받음)
-      this.client.subscribe('/cat/queue/private', (message: Message) => {
-        const data = JSON.parse(message.body);
-        callback(data);
-      });
-    };
-
-    this.client.activate();
+    // 단일 'cat' 채널만 구독 — 개인/전체 분기는 서버가 결정
+    this.socket.on('cat', (data: T.WSCatData) => {
+      callback(data);
+    });
   }
 
   sendMessage(payload: Record<string, unknown>) {
-    if (this.client.connected) {
-      this.client.publish({
-        destination: '/app/cat',           // 서버의 @MessageMapping("/cat")으로 전송
-        body: JSON.stringify(payload),
-      });
+    if (this.socket.connected) {
+      // 서버의 @SubscribeMessage('cat') 핸들러로 전달
+      this.socket.emit('cat', payload);
     }
   }
 }
 ```
+
+NestJS Gateway 로 백엔드를 옮기면서 가장 좋았던 건, **클라이언트가 채널을 두 개 구독할 필요가 없어졌다는 점**이에요! 🎉
+STOMP 시절엔 `/topic/...` 과 `/queue/...` 를 따로 구독했지만, Socket.IO 에서는 서버가 `client.emit` / `server.emit` 으로 송신 대상을 결정하기 때문에 **프론트엔드 구독 코드가 절반으로** 줄어들었습니다.
 
 **게임 엔진에서의 WebSocket 활용**
 
@@ -340,139 +334,254 @@ export class Engine {
 
 WebSocket 통신에서 가장 중요했던 부분은 **메시지를 누구에게 보낼지 결정하는 것**이었어요!
 
-**전체 브로드캐스트 (`/topic/cat`)**  
+**전체 브로드캐스트 (`server.emit('cat', ...)`)**  
 - 전체 랭킹이 변경되었을 때 → **모든 접속자에게 동시에 전송** 📢
 - 새로운 최고 점수가 나왔을 때 모든 플레이어가 실시간으로 확인 가능
 
 <br>
 
-**개인 전용 메시지 (`/cat/queue/private`)**  
+**개인 전용 메시지 (`client.emit('cat', ...)`)**  
 - 개인 랭킹이 업데이트되었을 때 → **해당 세션의 사용자에게만 전송** 🔒
 - 각자의 개인 기록은 본인만 실시간으로 업데이트 받음
-- 세션 ID를 통해 정확한 사용자 식별
+- 소켓 인스턴스 자체가 세션 식별자 역할
 
 <br>
 
 이렇게 구분해서 구현함으로써 **불필요한 네트워크 트래픽을 줄이고** 각 사용자에게 **정말 필요한 정보만** 전달할 수 있었습니다! ⚡
 
-**핵심 포인트**: 서버에서는 Spring의 `SimpMessagingTemplate`을 사용해 특정 세션에만 메시지를 전송하고, 
-프론트엔드에서는 두 개의 서로 다른 채널을 구독하여 적절한 데이터를 실시간으로 처리합니다! 💪
+**핵심 포인트**: NestJS Gateway 안에서 `@WebSocketServer()` 로 주입받은 `Server` 인스턴스의 `server.emit` 은 전체 브로드캐스트, `@ConnectedSocket()` 으로 받은 개별 소켓의 `client.emit` 은 1:1 송신으로 자연스럽게 분기됩니다.
+프론트엔드에서는 단일 `'cat'` 이벤트만 구독하면 되기 때문에, **송신 대상 결정 책임이 온전히 서버에 있다는 게 굉장히 깔끔**합니다! 💪
 
 ## 💾 백엔드 기술적 포인트
 
-### WebSocket을 이용한 실시간 통신
+### 모듈 기반 아키텍처
 
-클라이언트와 서버 간의 양방향 실시간 통신을 위해 Spring의 STOMP WebSocket을 구현했습니다.
+NestJS의 가장 큰 매력은 **도메인 단위로 모듈을 쪼갤 수 있다는 점**이에요! 🧩
+Cat Run 백엔드는 `CatModule`, `GamePlayHistoryModule`, `GameModule`, `RedisModule`, `PrismaModule` 다섯 개로 모듈을 나누고,
+실시간 통신을 담당하는 `GameModule` 이 두 도메인 서비스를 주입받아 **오케스트레이션 역할만** 수행하도록 책임을 분리했습니다.
 
-```java
-@MessageMapping("/cat")
-@SendTo("/topic/cat")
-public Map<String, Object> WebSocketCommunication(@Payload Map<String, Object> payload, SimpMessageHeaderAccessor headerAccessor) {
-  String ip = Utils.getWebSocketClientIP(headerAccessor);
-  String sessionId = headerAccessor.getUser().getName();
-
-  // 게임 점수 추가
-  if (payload.get("catNo") != null && payload.get("score") != null) {
-    return addGameScore(payload, sessionId);
-  }
-
-  // 고양이 생성
-  if (payload.get("catName") != null) {
-    String catName = (String) payload.get("catName");
-    return createCat(catName, ip, sessionId);
-  }
-  
-  // 초기 데이터
-  return prepareInitialData(ip, sessionId);
-}
+```typescript
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
+    RedisModule,
+    CatModule,
+    GamePlayHistoryModule,
+    GameModule,
+  ],
+})
+export class AppModule {}
 ```
 
-### Redis를 활용한 캐싱 시스템
+이렇게 모듈을 나누니 **각 도메인의 비즈니스 로직과 통신 계층이 깨끗하게 분리**되어, 테스트할 때도 필요한 모듈만 골라 띄울 수 있고 책임 경계가 흐트러지지 않더라고요! ✨
 
-게임 랭킹 데이터는 자주 조회되지만 상대적으로 업데이트가 적은 특성을 가지고 있어 Redis를 사용하여 캐싱했습니다.
+### NestJS Gateway 로 구현한 WebSocket
 
-```java
-// Redis 트랜잭션 실행
-redisTemplate.execute(new SessionCallback<List<Object>>() {
-  @Override
-  public List<Object> execute(RedisOperations operations) {
-    try {
-      operations.watch("top5GamePlayHistory");
-      operations.watch("byCatTop5GamePlayHistory-" + catNo);
-      
-      // 현재 Redis 값 조회
-      String redisTop5GamePlayHistory = redisTemplate.opsForValue().get("top5GamePlayHistory");
-      String redisByCatTop5GamePlayHistory = redisTemplate.opsForValue().get("byCatTop5GamePlayHistory-" + catNo);
-      
-      // 트랜잭션 시작
-      operations.multi();
-      
-      // 데이터 업데이트 로직...
-      
-      // 트랜잭션 실행
-      return operations.exec();
-    } catch (Exception e) {
-      operations.discard();
-      throw e;
+Spring 의 `@MessageMapping` 과 가장 비슷한 게 NestJS의 **`@SubscribeMessage` 데코레이터**에요!
+`WebSocketGateway` 클래스 하나로 **연결 / 해제 라이프사이클 + 메시지 처리** 까지 한 번에 묶을 수 있어 정말 깔끔했습니다.
+
+```typescript
+@WebSocketGateway({
+  cors: {
+    origin: (origin, callback) => {
+      const allowed = getAllowedOrigins();
+      if (!origin || allowed.includes(origin)) return callback(null, true);
+      return callback(null, false);
+    },
+    credentials: true,
+  },
+})
+export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  @WebSocketServer()
+  server!: Server;
+
+  constructor(
+    private readonly catService: CatService,
+    private readonly redisService: RedisService,
+    private readonly gamePlayHistoryService: GamePlayHistoryService,
+  ) {}
+
+  handleConnection(client: GameSocket): void {
+    // 프록시 환경(X-Forwarded-For) 까지 고려해 클라이언트 IP 추출
+    client.clientIp = getClientIp(client);
+  }
+
+  @SubscribeMessage('cat')
+  async handleCatMessage(
+    @ConnectedSocket() client: GameSocket,
+    @MessageBody() payload: CatChannelPayload,
+  ): Promise<void> {
+    const ip = client.clientIp;
+
+    if (payload.catName) return this.createCat(client, payload.catName, ip);
+    if (payload.catNo != null && payload.score != null) {
+      return this.addGameScore(client, payload.catNo, payload.score);
     }
+    return this.prepareInitialData(client, ip);
   }
-});
-```
-
-### Repository 패턴 확장
-
-Spring Data JPA의 기본 기능을 확장하여 QueryDSL을 효과적으로 통합했습니다.
-
-```java
-// 기본 JpaRepository와 커스텀 인터페이스 결합
-public interface GamePlayHistoryRepository extends 
-    JpaRepository<GamePlayHistory, Long>, 
-    GamePlayHistoryRepositoryCustom {
-  // 추가 메서드...
-}
-
-// 커스텀 인터페이스 정의
-public interface GamePlayHistoryRepositoryCustom {
-  List<GamePlayHistoryDto.Top5> findTop5();
-  List<GamePlayHistoryDto.Top5> findTop5(Long catNo);
-}
-
-// QueryDSL 구현체
-@RequiredArgsConstructor
-public class GamePlayHistoryRepositoryImpl implements GamePlayHistoryRepositoryCustom {
-  private final JPAQueryFactory queryFactory;
-  
-  // 구현 메서드...
 }
 ```
 
-### QueryDSL을 활용한 타입 안전 쿼리
+핵심 포인트는 **단일 `'cat'` 채널** 위에서 페이로드 형태로 분기한다는 것입니다! 🎯  
+`catName` 만 있으면 고양이 생성, `catNo + score` 면 점수 제출, 빈 페이로드면 초기 데이터 요청처럼요. 채널을 여러 개 만들기보다 **페이로드 의도로 분기**하는 쪽이 클라이언트와 서버 모두에서 단순했습니다.
 
-QueryDSL은 Java 코드로 타입 안전하게 SQL 쿼리를 작성할 수 있게 해주는 프레임워크에요. 본 프로젝트에서는 Spring Data JPA와 함께 QueryDSL을 사용하여 데이터 조회 로직을 구현했습니다.
+### Prisma 의 조건부 Atomic Update — Race Condition 방어
 
-```java
-// 공통 기본 쿼리 생성
-private JPAQuery<GamePlayHistoryDto.Top5> getBaseQuery() {
-  return queryFactory
-    .select(Projections.constructor(
-      GamePlayHistoryDto.Top5.class,
-      cat.name,
-      gamePlayHistory.score,
-      gamePlayHistory.createAt
-    ))
-    .from(gamePlayHistory)
-    .innerJoin(cat)
-    .on(gamePlayHistory.catNo.eq(cat.no));
-}
+게임 점수는 동시에 여러 세션에서 들어올 수 있기 때문에, **최고 점수 갱신을 read → compare → write 패턴으로 짜면 안 돼요!** ⚠️
+이 사이에 다른 세션이 더 높은 점수를 먼저 써넣으면, 내 갱신이 그걸 덮어쓰는 **lost update** 가 발생하기 때문입니다.
 
-@Override
-public List<GamePlayHistoryDto.Top5> findTop5() {
-  return getBaseQuery()
-    .orderBy(gamePlayHistory.score.desc())
-    .limit(5)
-    .fetch();
+해결책은 **Prisma 의 `where` 에 비교 조건을 직접 넣어 SQL 한 방으로 atomic update** 하는 것이었어요.
+
+```typescript
+async updateHighestScore(catNo: number, score: number) {
+  try {
+    const cat = await this.prisma.cat.update({
+      // ✅ 현재 highestScore 가 새 score 보다 작은 경우에만 갱신
+      where: { no: catNo, highestScore: { lt: score } },
+      data: { highestScore: score, highestScoreAt: new Date() },
+    });
+    return { updated: true, cat };
+  } catch (error) {
+    if ((error as { code?: string }).code === 'P2025') {
+      // 갱신 대상이 없음 = 이미 더 높은 점수가 존재 → 기존 값 반환
+      const existing = await this.prisma.cat.findUnique({ where: { no: catNo } });
+      if (!existing) throw new NotFoundCatException(`Cat not found: ${catNo}`);
+      return { updated: false, cat: existing };
+    }
+    throw error;
+  }
 }
 ```
+
+`P2025` 는 Prisma 가 "조건에 맞는 row 가 없어 update 대상 0건" 일 때 던지는 에러입니다.
+이걸 **"최고 점수가 갱신되지 않았다" 시그널** 로 활용해서, 분산 락이나 별도 트랜잭션 없이 **DB 자체를 single source of truth** 로 두고 race 를 막을 수 있었어요! 🔒
+
+### setIfChanged 로 불필요한 브로드캐스트 차단
+
+전체 랭킹은 모든 접속자에게 브로드캐스트되기 때문에, **변동이 없을 때 굳이 메시지를 뿌리는 건 트래픽 낭비**입니다.
+그래서 Redis 캐시의 직전 값과 비교해서 **실제로 바뀐 경우에만 set + emit** 하는 패턴을 만들었어요.
+
+```typescript
+private async setIfChanged<T>(key: string, value: T): Promise<boolean> {
+  const newJson = JSON.stringify(value);
+  const cachedJson = await this.redisService.get(key);
+
+  if (newJson !== cachedJson) {
+    await this.redisService.set(key, newJson);
+    return true;        // 변동 발생 → 호출부가 emit
+  }
+  return false;          // 변동 없음 → emit 생략
+}
+
+private async addGameScore(client: GameSocket, catNo: number, score: number) {
+  await this.gamePlayHistoryService.createGamePlayHistory({ catNo, score });
+  const { updated: highestUpdated } = await this.catService.updateHighestScore(catNo, score);
+
+  // 1) 개인 랭킹 — 변동 시에만 해당 세션에 emit
+  const updatedCatTop5 = await this.gamePlayHistoryService.getByCatTop5GamePlayHistory(catNo);
+  if (await this.setIfChanged(redisKeyTop5ByCat(catNo), updatedCatTop5)) {
+    client.emit('cat', { code: WS_CODE.UPDATE_MY_RANK, top5ByCat: updatedCatTop5 });
+  }
+
+  // 2) 전체 랭킹 — 최고 점수 갱신 + 캐시값 변경 모두 만족할 때만 broadcast
+  if (!highestUpdated) return;
+  const updatedTop5Cats = await this.catService.getTop5Cats();
+  if (await this.setIfChanged(REDIS_KEY_TOP5_CATS, updatedTop5Cats)) {
+    this.server.emit('cat', { code: WS_CODE.UPDATE_ALL_RANK, top5Cats: updatedTop5Cats });
+  }
+}
+```
+
+이중 가드 (`highestUpdated` + `setIfChanged`) 를 두니 **DB 갱신 → 캐시 비교 → emit** 흐름이 자연스럽게 일관되더라고요!
+이 구조에서 캐시는 단순한 성능 최적화를 넘어 **"변경 감지기"** 역할까지 해주는 셈이라, 네트워크 트래픽을 꽤 많이 절약할 수 있었습니다. ⚡
+
+### class-validator 로 선언적 DTO 검증
+
+Spring 의 `@Valid` + Bean Validation 과 똑같은 역할을, NestJS 에서는 **`class-validator` 데코레이터**로 처리합니다.
+DTO 클래스에 검증 룰을 적어두면 `ValidationPipe` 가 모든 진입점에서 자동으로 검사해줘요.
+
+```typescript
+export class CreateCatDto {
+  @IsString()
+  @IsNotEmpty({ message: 'Cat name is required' })
+  @MaxLength(CAT_NAME_MAX_LENGTH, {
+    message: `Cat name must be at most ${CAT_NAME_MAX_LENGTH} chars`,
+  })
+  name!: string;
+}
+
+// main.ts — 전역 ValidationPipe 등록
+app.useGlobalPipes(
+  new ValidationPipe({
+    whitelist: true,            // DTO 에 없는 필드는 자동 제거
+    forbidNonWhitelisted: true, // 정의되지 않은 필드 들어오면 400
+    transform: true,            // 평문 객체 → DTO 인스턴스로 변환
+  }),
+);
+```
+
+`whitelist: true` 옵션 덕분에 **요청 본문에 정의되지 않은 키가 섞여 들어오는 것을 1차로 차단**할 수 있어, 컨트롤러 / 서비스 코드 안에서 방어 로직을 쓸 일이 거의 없어졌어요. 🛡️
+
+### 전역 예외 필터로 일관된 에러 응답
+
+도메인 예외를 클래스로 표현하고, **응답 포맷을 한 곳에서 결정**하기 위해 `BaseException` + `GlobalExceptionFilter` 를 두었습니다.
+
+```typescript
+export class BaseException extends HttpException {
+  constructor(
+    public readonly errorCode: string,
+    message: string,
+    statusCode: HttpStatus,
+  ) {
+    super({ errorCode, message }, statusCode);
+  }
+}
+
+@Catch()
+export class GlobalExceptionFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost): void {
+    const response = host.switchToHttp().getResponse<Response>();
+
+    if (exception instanceof BaseException) {
+      response.status(exception.getStatus()).json({
+        code: exception.getStatus(),
+        message: exception.message,
+        errorCode: exception.errorCode,
+        data: null,
+      });
+      return;
+    }
+    // 그 외 예외는 500 으로 일괄 변환...
+  }
+}
+```
+
+서비스 레이어에서는 `throw new NotFoundCatException(...)` 같이 **의미 있는 도메인 예외만 던지면** 되고, 응답 포맷은 필터가 책임지기 때문에 **로직과 응답 표현이 완전히 분리**됩니다.
+한 번 깔아두면 새 도메인을 추가할 때마다 같은 패턴을 그대로 따라갈 수 있어 일관성 유지가 정말 편해요! ✨
+
+### Prisma 스키마로 인덱스까지 관리
+
+Prisma 의 매력 중 하나는 **DB 스키마와 인덱스를 코드로 형상관리**할 수 있다는 점입니다.
+랭킹 조회 패턴(`catNo` 로 필터 + `score` 내림차순)에 맞춰 복합 인덱스를 미리 걸어두었어요.
+
+```prisma
+model GamePlayHistory {
+  no       Int      @id @default(autoincrement())
+  catNo    Int      @map("cat_no")
+  score    Int
+  createAt DateTime @default(now()) @map("create_at")
+
+  cat Cat @relation(fields: [catNo], references: [no])
+
+  // 개인 랭킹 조회 — (catNo ASC, score DESC) 복합 인덱스로 정렬 비용 제거
+  @@index([catNo, score(sort: Desc)], map: "idx_history_cat_score")
+  @@map("game_play_history")
+}
+```
+
+운영 DB 와 컬럼명은 `@map` 으로 snake_case 매핑하고, **인덱스 정의까지 스키마 파일에 함께 담아두면** `prisma migrate` 가 알아서 SQL 을 생성해줍니다.
+DB 와 코드 사이의 lag 가 사라져서 정말 마음에 들었어요! 💚
 
 ## 🔧 개발 과정에서의 도전과 해결책
 
@@ -492,7 +601,17 @@ public List<GamePlayHistoryDto.Top5> findTop5() {
 
 ### 데이터 일관성 유지
 
-랭킹 데이터를 Redis에 캐싱하면서 MySQL의 원본 데이터와의 일관성 유지가 중요한 과제였습니다. Redis 트랜잭션을 활용하여 데이터 불일치 문제를 해결했습니다.
+랭킹 데이터를 Redis 에 캐싱하면서 **MySQL 원본 데이터와의 일관성 유지**가 중요한 과제였어요.
+처음에는 Redis 트랜잭션(`MULTI` / `WATCH`)으로 직접 정합성을 챙기려 했는데, 동시 갱신 시나리오가 늘어날수록 트랜잭션 충돌 처리 코드가 굉장히 복잡해지더라고요. 😵
+
+그래서 **DB 를 single source of truth 로 두는 한 방향 흐름**으로 단순화했습니다.
+
+1. **Prisma 의 조건부 atomic update** 로 race 를 DB 단에서 차단 (`where: { highestScore: { lt: score } }`)
+2. 갱신 후엔 **DB 결과로부터 랭킹을 다시 계산** 해서 신뢰 가능한 값을 만들고
+3. **`setIfChanged`** 로 캐시와 비교해서 변동이 있을 때만 Redis 업데이트 + emit
+
+이렇게 흐름을 잡으니 분산 락이나 Redis 트랜잭션 같은 복잡한 메커니즘 없이도 **"DB → 캐시" 한 방향 동기화**만 보장하면 되어, 구현이 훨씬 단순해지고 디버깅도 편해졌어요!
+**복잡한 동시성 제어는 DB 가 가장 잘하는 일에 위임한다** — 이번 프로젝트에서 얻은 가장 값진 교훈 중 하나였습니다. 🎯
 
 ## 🎬 마무리
 

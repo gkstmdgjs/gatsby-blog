@@ -1,15 +1,14 @@
-import * as S from './styled';
-
 import React from 'react';
-import Image from '../Image';
+import { BiLogoJavascript, BiLogoTypescript } from 'react-icons/bi';
+import { DiMsqlServer } from 'react-icons/di';
+import { FaLaravel, FaNodeJs, FaReact, FaVuejs } from 'react-icons/fa';
+import { FaFlutter } from 'react-icons/fa6';
+import { SiDart, SiMysql, SiNestjs, SiSpringboot } from 'react-icons/si';
 
 import { Project } from '@/src/type';
-import { FaFlutter } from 'react-icons/fa6';
-import { DiMsqlServer } from 'react-icons/di';
-import { SiDart, SiMysql, SiSpringboot } from 'react-icons/si';
-import { BiLogoJavascript, BiLogoTypescript } from "react-icons/bi";
-import { FaLaravel, FaNodeJs, FaReact, FaVuejs } from 'react-icons/fa';
 
+import Image from '../Image';
+import * as S from './styled';
 
 type ProjectCardProps = {
   project: Project;
@@ -35,6 +34,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
         return <FaNodeJs style={iconStyle} />;
       case 'Spring Boot':
         return <SiSpringboot style={iconStyle} />;
+      case 'NestJS':
+        return <SiNestjs style={iconStyle} />;
       case 'Laravel':
         return <FaLaravel style={iconStyle} />;
       case 'MySQL':
@@ -66,7 +67,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
           {Object.keys(project.links).map(
             (link, index) =>
               project.links[link as keyof typeof project.links] && (
-                <S.ProjectLink key={index} target='_blank' href={project.links[link as keyof typeof project.links]}>
+                <S.ProjectLink
+                  key={index}
+                  target='_blank'
+                  href={project.links[link as keyof typeof project.links]}
+                >
                   {link}
                 </S.ProjectLink>
               ),

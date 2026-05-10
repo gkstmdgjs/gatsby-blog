@@ -57,7 +57,8 @@ export const Tab = styled.div<{ isSelected: 'true' | 'false' }>`
   font-size: 17px;
   cursor: pointer;
   line-height: 50px;
-  color: ${({ isSelected, theme }) => (isSelected === 'true' ? theme.color.black100 : theme.color.gray60)};
+  color: ${({ isSelected, theme }) =>
+    isSelected === 'true' ? theme.color.black100 : theme.color.gray60};
 `;
 
 export const PostCardsWrapper = styled.div`

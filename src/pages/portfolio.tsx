@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { graphql } from 'gatsby';
+import { graphql, HeadProps } from 'gatsby';
 import React from 'react';
 
 import Layout from '../components/Layout';
@@ -8,10 +8,12 @@ import Seo from '../components/Seo';
 import { MOBILE_MEDIA_QUERY } from '../styles/themeStyle';
 import { SiteMetadata } from '../type';
 
+type PortfolioData = {
+  site: { siteMetadata: SiteMetadata };
+};
+
 type portfolioProps = {
-  data: {
-    site: { siteMetadata: SiteMetadata };
-  };
+  data: PortfolioData;
   location: Location;
 };
 
@@ -19,12 +21,10 @@ const portfolio: React.FC<portfolioProps> = ({ location, data }) => {
   const metaData = data.site.siteMetadata;
   const {
     portfolio: { projects },
-    author,
   } = metaData;
 
   return (
     <Layout location={location}>
-      <Seo title={`${author.nickname} | Portfolio`} />
       <Title>SeungHoney Creation</Title>
       <ProjectCardsWrapper>
         {projects.map((project, index) => (
@@ -36,6 +36,10 @@ const portfolio: React.FC<portfolioProps> = ({ location, data }) => {
 };
 
 export default portfolio;
+
+export const Head = ({ data }: HeadProps<PortfolioData>) => (
+  <Seo title={`${data.site.siteMetadata.author.nickname} | Portfolio`} />
+);
 
 export const pageQuery = graphql`
   query {

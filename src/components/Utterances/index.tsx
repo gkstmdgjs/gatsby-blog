@@ -1,10 +1,10 @@
 import { ThemeManagerContext } from 'gatsby-emotion-dark-mode';
-import React, { createRef, useContext, useEffect, useRef } from 'react';
+import React, { useContext, useEffect, useRef } from 'react';
 
 import * as S from './styled';
 
-const src = 'https://utteranc.es/client.js';
-const branch = 'main';
+const SRC = 'https://utteranc.es/client.js';
+const BRANCH = 'main';
 
 type UtterancesProps = {
   repo: string;
@@ -12,36 +12,31 @@ type UtterancesProps = {
 };
 
 const Utterances: React.FC<UtterancesProps> = ({ repo, path }) => {
-  const rootElm = createRef<HTMLDivElement>();
-  const isUtterancesLoaded = useRef(false);
+  const rootElm = useRef<HTMLDivElement>(null);
   const theme = useContext(ThemeManagerContext);
 
   useEffect(() => {
-    if (!rootElm.current) return;
+    const node = rootElm.current;
+    if (!node) return;
 
-    const utterances = document.createElement('script');
-    const utterancesConfig: { [key: string]: unknown } = {
-      src,
-      repo,
-      branch,
-      'theme': theme.isDark ? 'photon-dark' : 'github-light',
-      'label': 'comment',
-      'async': true,
-      'issue-term': 'pathname',
-      'crossorigin': 'anonymous',
-    };
-
-    Object.keys(utterancesConfig).forEach((configKey) => {
-      utterances.setAttribute(configKey, utterancesConfig[configKey] as string);
-    });
-    rootElm.current.appendChild(utterances);
-
-    if (isUtterancesLoaded.current) {
-      rootElm.current.replaceChild(utterances, rootElm.current.firstChild as Node);
-    } else {
-      isUtterancesLoaded.current = true;
+    // Utterances client.js 는 자기 자신(<script>) 옆에 iframe 을 주입한다.
+    // 재실행 시 정리 없이 새 script 만 append 하면 이전 script 가 부모를 잃어 insertAdjacentHTML 에서 "no parent" 에러가 난다.
+    while (node.firstChild) {
+      node.removeChild(node.firstChild);
     }
-  }, [rootElm, path, theme.isDark]);
+
+    const script = document.createElement('script');
+    script.src = SRC;
+    script.async = true;
+    script.crossOrigin = 'anonymous';
+    script.setAttribute('repo', repo);
+    script.setAttribute('branch', BRANCH);
+    script.setAttribute('theme', theme.isDark ? 'photon-dark' : 'github-light');
+    script.setAttribute('label', 'comment');
+    script.setAttribute('issue-term', 'pathname');
+
+    node.appendChild(script);
+  }, [repo, path, theme.isDark]);
 
   return <S.Wrapper className='utterances' ref={rootElm} />;
 };

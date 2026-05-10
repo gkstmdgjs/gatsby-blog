@@ -15,19 +15,11 @@ const config: GatsbyConfig = {
     `gatsby-plugin-emotion`,
     `gatsby-plugin-image`,
     `gatsby-plugin-sitemap`,
-    `gatsby-plugin-advanced-sitemap`,
     `gatsby-plugin-offline`,
-    `gatsby-plugin-react-helmet`,
     `gatsby-plugin-sass`,
+    `gatsby-plugin-catch-links`,
     `gatsby-transformer-sharp`,
     `gatsby-plugin-sharp`,
-    `gatsby-plugin-svgr`,
-    {
-      resolve: `gatsby-plugin-google-adsense`,
-      options: {
-        publisherId: `ca-pub-8074104653609685`,
-      },
-    },
     {
       resolve: `gatsby-plugin-feed`,
       options: {
@@ -57,7 +49,7 @@ const config: GatsbyConfig = {
             query: `
               {
                 allMarkdownRemark(
-                  sort: { order: DESC, fields: [frontmatter___date] },
+                  sort: { frontmatter: { date: DESC } },
                 ) {
                   nodes {
                     excerpt
@@ -97,10 +89,12 @@ const config: GatsbyConfig = {
       },
     },
     {
-      resolve: `gatsby-plugin-gtag`,
+      resolve: `gatsby-plugin-google-gtag`,
       options: {
-        trackingId: `G-W7X8818JTT`,
-        head: true,
+        trackingIds: [`G-W7X8818JTT`],
+        pluginConfig: {
+          head: true,
+        },
       },
     },
     {
@@ -141,44 +135,21 @@ const config: GatsbyConfig = {
             },
           },
           {
-            resolve: `gatsby-remark-responsive-iframe`,
-            options: {
-              wrapperStyle: `margin-bottom: 1.0725rem`,
-            },
-          },
-          {
             resolve: `gatsby-remark-prismjs`,
             options: {
               classPrefix: 'language-',
-              inlineCodeMarker: null,
-              aliases: {},
               showLineNumbers: false,
-              noInlineHighlight: false,
-              languageExtensions: [
-                {
-                  language: 'superscript',
-                  extend: 'javascript',
-                  definition: {
-                    superscript_types: /(SuperType)/,
-                  },
-                  insertBefore: {
-                    function: {
-                      superscript_keywords: /(superif|superelse)/,
-                    },
-                  },
-                },
-              ],
-              prompt: {
-                user: 'root',
-                host: 'localhost',
-                global: false,
-              },
-              escapeEntities: {},
             },
           },
           `gatsby-remark-autolink-headers`,
-          `gatsby-remark-copy-linked-files`,
           `gatsby-remark-smartypants`,
+          {
+            resolve: `gatsby-remark-external-links`,
+            options: {
+              target: `_blank`,
+              rel: `noopener noreferrer`,
+            },
+          },
         ],
       },
     },
