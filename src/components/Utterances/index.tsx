@@ -4,6 +4,7 @@ import React, { useContext, useEffect, useRef } from 'react';
 import * as S from './styled';
 
 const SRC = 'https://utteranc.es/client.js';
+const ORIGIN = 'https://utteranc.es';
 const BRANCH = 'main';
 
 type UtterancesProps = {
@@ -11,19 +12,17 @@ type UtterancesProps = {
   path: string;
 };
 
+const getUtterancesTheme = (isDark: boolean) => (isDark ? 'photon-dark' : 'github-light');
+
 const Utterances: React.FC<UtterancesProps> = ({ repo, path }) => {
   const rootElm = useRef<HTMLDivElement>(null);
   const theme = useContext(ThemeManagerContext);
+  const initialThemeRef = useRef(theme.isDark);
 
+  // script 마운트
   useEffect(() => {
     const node = rootElm.current;
     if (!node) return;
-
-    // Utterances client.js 는 자기 자신(<script>) 옆에 iframe 을 주입한다.
-    // 재실행 시 정리 없이 새 script 만 append 하면 이전 script 가 부모를 잃어 insertAdjacentHTML 에서 "no parent" 에러가 난다.
-    while (node.firstChild) {
-      node.removeChild(node.firstChild);
-    }
 
     const script = document.createElement('script');
     script.src = SRC;
@@ -31,12 +30,44 @@ const Utterances: React.FC<UtterancesProps> = ({ repo, path }) => {
     script.crossOrigin = 'anonymous';
     script.setAttribute('repo', repo);
     script.setAttribute('branch', BRANCH);
-    script.setAttribute('theme', theme.isDark ? 'photon-dark' : 'github-light');
+    script.setAttribute('theme', getUtterancesTheme(initialThemeRef.current));
     script.setAttribute('label', 'comment');
     script.setAttribute('issue-term', 'pathname');
 
     node.appendChild(script);
-  }, [repo, path, theme.isDark]);
+
+    return () => {
+      while (node.firstChild) node.removeChild(node.firstChild);
+    };
+  }, [repo, path]);
+
+  // 테마 변경 시 iframe 에 postMessage
+  useEffect(() => {
+    const node = rootElm.current;
+    if (!node) return;
+
+    const sendTheme = () => {
+      const iframe = node.querySelector<HTMLIFrameElement>('iframe.utterances-frame');
+      iframe?.contentWindow?.postMessage(
+        { type: 'set-theme', theme: getUtterancesTheme(theme.isDark) },
+        ORIGIN,
+      );
+    };
+
+    if (node.querySelector('iframe.utterances-frame')) {
+      sendTheme();
+      return;
+    }
+
+    // iframe 준비 후 postMessage
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== ORIGIN) return;
+      sendTheme();
+      window.removeEventListener('message', onMessage);
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [theme.isDark]);
 
   return <S.Wrapper className='utterances' ref={rootElm} />;
 };
