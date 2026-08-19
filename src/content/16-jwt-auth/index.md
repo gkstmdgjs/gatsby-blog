@@ -1,7 +1,7 @@
 ---
 emoji: 🔐
 title: 'JWT 인증 직접 만들기'
-date: '2026-05-10'
+date: '2026-07-05'
 categories: Dev Backend Server
 ---
 
@@ -45,7 +45,7 @@ eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0In0.X9oxZ...
 | 🔒 **암호화** | 내용 숨기기 | 편지를 봉투에 넣어 봉인 |
 | ✍️ **서명** | 내용 검증 | 편지에 도장을 찍어 *"내가 썼다"* 증명 |
 
-JWT는 **서명**이에요. 그래서 내용은 보여도, 누가 만든 토큰인지는 검증할 수 있습니다. 🎯
+JWT는 **서명**이에요. 그래서 내용은 보여도, 누가 만든 토큰인지는 검증할 수 있습니다! 🎯
 
 &nbsp;
 
@@ -272,7 +272,7 @@ export function verify(token: string, secret: string): Payload | null {
 }
 ```
 
-이제 진짜로 *"내가 발급한 토큰이 맞다 + 변조되지 않았다"* 가 보장됩니다. 🛡️
+이제 진짜로 *"내가 발급한 토큰이 맞다 + 변조되지 않았다"* 가 보장됩니다! 🛡️
 
 &nbsp;
 
@@ -369,7 +369,7 @@ res.json({ accessToken });
 
 &nbsp;
 
-`jsonwebtoken` 한 줄 뒤에 숨어있던 **Base64URL · HMAC · timing-safe compare**라는 세 가지 도구를 손으로 만져보고 나니, 매일 쓰던 토큰이 한층 평범해 보였어요. 다음에 인증 코드를 리뷰할 때 *"이 비교는 상수 시간인가?"*, *"`alg` 화이트리스트가 있는가?"* 같은 질문을 자연스럽게 던질 수 있을 것 같습니다. 🚀✨
+`jsonwebtoken` 한 줄 뒤에 숨어있던 **Base64URL · HMAC · timing-safe compare**라는 세 가지 도구를 손으로 만져보고 나니, 매일 쓰던 토큰이 한층 평범해 보였어요. 다음에 인증 코드를 리뷰할 때 *"이 비교는 상수 시간인가?"*, *"`alg` 화이트리스트가 있는가?"* 같은 질문을 자연스럽게 던질 수 있을 것 같습니다! 🚀✨
 
 ```toc
 ```
