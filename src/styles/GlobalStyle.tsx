@@ -46,6 +46,18 @@ const style = (theme: Theme) => css`
     appearance: none;
   }
 
+  /* 다크/라이트 모드 색상 전환 */
+  *,
+  *::before,
+  *::after {
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease,
+      border-color 0.3s ease,
+      fill 0.3s ease,
+      stroke 0.3s ease;
+  }
+
   html {
     font-family: 'GmarketSansMedium';
     width: 100%;
