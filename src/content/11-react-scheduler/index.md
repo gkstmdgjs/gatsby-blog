@@ -406,7 +406,7 @@ async/await을 쓰면 어떻게든 yield되는 줄 알았는데, microtask는 �
 
 &nbsp;
 
-`useTransition` 한 줄 뒤에 숨어있던 **frame budget · macrotask yield · priority queue** 라는 세 가지 도구를 직접 손으로 만져보고 나니, 그동안 *"이상하게 안 멈추던 코드"* 의 비밀이 한 번에 풀렸어요. 측정값이 천지차이로 바뀌는 걸 직접 본 만큼, 이번 글의 통찰이 오래 남을 것 같습니다. 🚀✨
+`useTransition` 한 줄 뒤에 숨어있던 **frame budget · macrotask yield · priority queue** 라는 세 가지 도구를 직접 손으로 만져보고 나니, 그동안 *"이상하게 안 멈추던 코드"* 의 비밀이 한 번에 풀렸어요. 측정값이 천지차이로 바뀌는 걸 직접 본 만큼, 이번 글의 통찰이 오래 남을 것 같습니다! 🚀✨
 
 ```toc
 ```
