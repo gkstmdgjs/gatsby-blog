@@ -14,7 +14,7 @@ Gatsby와 TypeScript로 구축된 개인 기술 블로그입니다. 개발 경�
 ## 🛠️ 기술 스택
 
 ### Frontend
-- **Framework**: Gatsby v4
+- **Framework**: Gatsby v5
 - **Language**: TypeScript
 - **UI Library**: React v18
 - **Styling**: Emotion, Sass
