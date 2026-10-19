@@ -40,15 +40,20 @@ export const TabWrapper = styled.div`
 
 export const Tabs = styled.div`
   display: flex;
+  /* 카테고리가 늘어 한 줄을 넘으면 데스크톱은 다음 줄로 넘긴다.
+     center + overflow 조합은 넘친 왼쪽 탭이 잘려 스크롤로도 닿지 않았다(2026-10 DB 탭 추가 때 All이 사라짐). */
+  flex-wrap: wrap;
   justify-content: center;
   width: 100%;
   max-width: ${contentMaxWidth} + 40px;
   margin-bottom: 12px;
-  gap: 24px;
+  column-gap: 24px;
   overflow-y: hidden;
-  overflow-x: scroll;
   @media ${MOBILE_MEDIA_QUERY} {
+    /* 모바일은 기존처럼 한 줄 가로 스크롤 */
+    flex-wrap: nowrap;
     justify-content: flex-start;
+    overflow-x: scroll;
   }
   padding: 0 15px;
 `;
